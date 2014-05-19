@@ -1,0 +1,206 @@
+//
+//  ServerRequest.m
+//  modelTest
+//
+//  Created by mosh on 13-10-22.
+//  Copyright (c) 2013年 mosh. All rights reserved.
+//
+
+#import "ServerRequest.h"
+#import "GlobalConfig.h"
+
+@implementation ServerRequest
+
+/*
+ 单例 暂不使用
+ */
+//+ (ServerRequest *) shareServerRequest
+//{
+//    static ServerRequest *_instance = nil;
+//    static dispatch_once_t onceToken;
+//    dispatch_once(&onceToken, ^{
+//        _instance = [[ServerRequest alloc] init];
+//    });
+//    
+//    return _instance;
+//}
+
+
++ (ServerRequest *) serverRequest
+{
+    return [[ServerRequest alloc] init];
+}
+
+//发送请求
+/*
+ urlStr 网址
+ isAppendHost 是否在网址前加上moshhost
+ encrypt 是否加密
+ action 完成调用的方法
+ object 调用方法的target
+ */
+-(void)beginRequestWithUrl:(NSString *)urlStr
+              isAppendHost:(BOOL)isAppendHost
+                 isEncrypt:(BOOL)encrypt
+                    action:(SEL)action
+                    target:(id)object{
+    
+    //初始化
+    self.jsonData = nil;
+    self.requestSuccess = NO;
+    
+    //中文转码
+    NSString *requestUrl = [GlobalConfig convertToString:urlStr];
+    requestUrl = [requestUrl stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    
+    //加密
+    if (encrypt) {
+        requestUrl = [self encrypt:requestUrl];
+    }
+    
+    //加服务器
+    if (isAppendHost) {
+        [self appendingMoshHost:requestUrl];
+    }
+    
+    //加载
+    [self serverRequestWithUrl:requestUrl success:^(id jsonData) {
+        if ([object respondsToSelector:action]) {
+        self.jsonData = jsonData;
+        self.requestSuccess = YES;
+            SuppressPerformSelectorLeakWarning([object performSelector:action withObject:nil]);
+        }
+    } fail:^{
+        self.requestSuccess = NO;
+        self.jsonData = nil;
+        if ([object respondsToSelector:action]) {
+            SuppressPerformSelectorLeakWarning([object performSelector:action withObject:nil]);
+        }
+    }];
+}
+
+-(void)beginRequestWithUrl:(NSString *)urlStr
+              isAppendHost:(BOOL)isAppendHost
+                 isEncrypt:(BOOL)encrypt
+                   success:(void (^)(id jsonData))success
+                    fail:(void (^)(void))fail{
+    
+    //初始化
+    self.jsonData = nil;
+    self.requestSuccess = NO;
+
+    //中文转码
+    NSString *requestUrl = [GlobalConfig convertToString:urlStr];
+    requestUrl = [requestUrl stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    
+    //加密
+    if (encrypt) {
+        requestUrl = [self encrypt:requestUrl];
+    }
+    
+    //加服务器
+    if (isAppendHost) {
+       requestUrl = [self appendingMoshHost:requestUrl];
+    }
+    
+    MOSHLog(@"%@",requestUrl);
+    //加载
+    [self serverRequestWithUrl:requestUrl success:success fail:fail];
+}
+
+
+//afnetworking加载
+
+- (void) serverRequestWithUrl:(NSString *)str
+                      success:(void (^)(id jsonData))success
+                        fail:(void (^)(void))fail
+{
+    NSURL *url = [NSURL URLWithString:str];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10.0f];
+    [AFJSONRequestOperation addAcceptableContentTypes:[NSSet setWithObject:@"text/html"]];
+    AFJSONRequestOperation *operation = [AFJSONRequestOperation JSONRequestOperationWithRequest:request success:^(NSURLRequest *request, NSHTTPURLResponse *response, id JSON) {
+        //成功
+        self.jsonData = JSON;
+        self.requestSuccess = YES;
+        success(JSON);
+
+    } failure:^(NSURLRequest *request, NSHTTPURLResponse *response,NSError *error, id JSON){
+        //失败
+        self.requestSuccess = NO;
+        self.jsonData = nil;
+        NSLog(@"-=-=-%@",error);
+        fail();
+    }];
+    [operation start];
+
+}
+
+- (NSString *) appendingMoshHost:(NSString *)url
+{
+    return [MOSHHOST stringByAppendingString:url];
+}
+
+- (NSString *) appendingLoginHost:(NSString *)url
+{
+    return [LOGINHOST stringByAppendingString:url];
+}
+
+//加密
+- (NSString *) encrypt:(NSString *)url
+{
+//    return [self urlEncrypt:url];
+    return [self tokenEncrypt:url];
+}
+
+//DES加密
+- (NSString *) urlEncrypt:(NSString *)url
+{
+    //加密
+    url = [self encryptUseDES:url key:DESKEY];
+    return [self appendingLoginHost:url];
+}
+
+//token MD5 加密
+- (NSString *) tokenEncrypt:(NSString *)url
+{
+    return  [url stringByAppendingFormat:@"&token=%@",[GlobalConfig token]];
+}
+
+
+
+//加密用(DES方式)
+- (NSString *) encryptUseDES:(NSString *)clearText key:(NSString *)key
+{
+//    NSData *data = [clearText dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES];
+//    unsigned char buffer[1024];
+//    memset(buffer, 0, sizeof(char));
+//    size_t numBytesEncrypted = 0;
+    
+//    CCCryptorStatus cryptStatus = CCCrypt(kCCEncrypt,
+//                                          kCCAlgorithmDES,
+//                                          kCCOptionPKCS7Padding | kCCOptionECBMode,
+//                                          [key UTF8String],
+//                                          kCCKeySizeDES,
+//                                          nil,
+//                                          [data bytes],
+//                                          [data length],
+//                                          buffer,
+//                                          1024,
+//                                          &numBytesEncrypted);
+//    
+//    NSString* plainText = nil;
+//    if (cryptStatus == kCCSuccess) {
+//        NSData *dataTemp = [NSData dataWithBytes:buffer length:(NSUInteger)numBytesEncrypted];
+//        plainText = [GTMBase64 stringByEncodingData:dataTemp];
+//        ASIFormDataRequest *form = [ASIFormDataRequest requestWithURL:nil];
+//        plainText = [form encodeURL:plainText];
+//    }else{
+//        NSLog(@"DES加密失败");
+//    }
+//    return plainText;
+    return @"";
+}
+
+
+
+@end

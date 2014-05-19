@@ -1,0 +1,104 @@
+//
+//  RootViewController.m
+//  fenice
+//
+//  Created by 魔时网 on 13-12-3.
+//  Copyright (c) 2013年 mosh. All rights reserved.
+//
+
+#import "RootViewController.h"
+
+
+@interface RootViewController ()
+
+@end
+
+@implementation RootViewController
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void) viewWillAppear:(BOOL)animated
+{
+    [[BaseNavigationController shareBaseNavigationController:nil] showBackButton:NO];
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    [self checkVersionUpdate];
+    [self createChildrenControllers];
+    [self showChildrenCollerWithIndex:1];
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void) checkVersionUpdate
+{
+    _checkVersion = [[CheckVersionUpdate alloc] init];
+     [_checkVersion checkVersion];
+}
+
+- (void) createChildrenControllers
+{
+    _newsNavCtl = [ControllerFactory newsViewController];
+    [self.view addSubview:_newsNavCtl.view];
+    [self addChildViewController:_newsNavCtl];
+    
+    _collectNavCtl = [ControllerFactory collectViewController];
+    [self.view addSubview:_collectNavCtl.view];
+    [self addChildViewController:_collectNavCtl];
+    
+    _storeNavCtl = [ControllerFactory storeViewController];
+    [self.view addSubview:_storeNavCtl.view];
+    [self addChildViewController:_storeNavCtl];
+}
+
+- (void) showChildrenCollerWithIndex:(NSInteger)index
+{
+    NSArray *array = @[_newsNavCtl,_collectNavCtl,_storeNavCtl];
+    for (UIViewController *navCtl in array) {
+        if ([array indexOfObject:navCtl] == index) {
+            if (navCtl.view.hidden) {
+                navCtl.view.hidden = NO;
+                
+                NSInteger subtype = ANIMATION_RIGHT_SUBTYPE;
+                if (index == 2) {
+                    subtype = ANIMATION_LEFT_SUBTYPE;
+                }
+                
+                [GlobalConfig push:NO
+                    viewController:self
+           withNavigationCotroller:self.navigationController
+                     animationType:ANIMATION_SHOW_TYPE
+                           subType:subtype
+                          Duration:DURATION
+                          isToRoot:YES];
+            }
+        }
+        else {
+            navCtl.view.hidden = YES;
+        }
+    }
+}
+
+#pragma mark basenavigationControllerDelegate
+- (void) changeControllerWithIndex:(NSInteger)index
+{
+    [self showChildrenCollerWithIndex:index];
+}
+
+
+
+@end

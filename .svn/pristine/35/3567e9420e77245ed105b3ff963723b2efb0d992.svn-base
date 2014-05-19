@@ -1,0 +1,26 @@
+//
+//  News.m
+//  fenice
+//
+//  Created by  evafan2003 on 13-12-6.
+//  Copyright (c) 2013年 mosh. All rights reserved.
+//
+
+#import "News.h"
+#import "GlobalConfig.h"
+
+@implementation News
+
++ (News *) news:(NSDictionary *)dic {
+    News *news = [[News alloc] init];
+    //赋值
+    news.nid = [GlobalConfig convertToString:dic[@"id"]];
+    news.title = [GlobalConfig convertToString:dic[@"title"]];
+    news.content = [[GlobalConfig convertToString:dic[@"content"]] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+//    news.content = [GlobalConfig convertToString:dic[@"content"]];
+    news.addtime = [GlobalConfig convertDate:[GlobalConfig convertToString:dic[@"addtime"]]];
+    news.video = [GlobalConfig convertToString:dic[@"video"]];
+    news.picture = dic[@"picture"];
+    return news;
+}
+@end

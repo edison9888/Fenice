@@ -1,0 +1,34 @@
+//
+//  RotateVIew.h
+//  mao
+//
+//  Created by mosh on 13-9-13.
+//  Copyright (c) 2013年 com.mosh. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+//#import "CustomPageControl.h"
+
+@protocol RotateViewDelegate <NSObject>
+
+- (void) rotateViewPressedWith:(NSInteger)currentPage;
+
+@end
+
+@interface RotateView : UIView<UIScrollViewDelegate >
+
+@property (nonatomic, strong) NSArray           *dataArray;//全图片数组格式类似@[@"imageurl1",@"imageurl2"];
+//@property (nonatomic, strong) CustomPageControl *pageControl;
+@property (nonatomic, strong) UIScrollView      *scrollView;
+@property (nonatomic, assign) id<RotateViewDelegate> delegate;
+
+//初始化 自身frame 内部图片frame 图片url数组
+- (id) initWithFrame:(CGRect)rect andImageFrame:(CGRect)imageRect andDataArray:(NSArray *)array defaultImage:(NSString *)image;
+
+//设置page的大小 图片 （自定义pageControl使用）
+//- (void) changePageControlWithFrame:(CGRect)rect selectImage:(NSString *)selectImage unSelectImage:(NSString *)unSelectImage;
+
+//开启图片自动滚动功能
+- (void) startAutoRotate;
+
+@end
